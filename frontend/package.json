@@ -1,0 +1,26 @@
+{
+  "name": "travelmap-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate-api": "npx acts-util-apilib",
+    "start-dev": "webpack serve --open"
+  },
+  "keywords": [],
+  "author": "Amir Czwink",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "dotenv-webpack": "^8.0.1",
+    "source-map-loader": "^4.0.1",
+    "ts-loader": "^9.4.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "dependencies": {
+    "acfrontend": "*",
+    "acts-util-core": "*",
+    "country-iso-2-to-3": "^1.1.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "travelmap-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run-dev-server": "nodemon --exec \"npx acts-util-apilib && npx webpack; (export $(cat .env | xargs) && cd dist && node bundle.js)\""
+  },
+  "keywords": [],
+  "author": "Amir Czwink",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "acts-util-apilib": "*",
+    "acts-util-core": "*",
+    "acts-util-node": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "source-map-loader": "^4.0.1",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.6"
+  }
+}
