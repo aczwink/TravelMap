@@ -20,6 +20,7 @@ import { Injectable } from "acts-util-node";
 import { TripOverviewData, TripsController } from "../data-access/TripsController";
 import { NumberDictionary } from "acts-util-core";
 import { GeocodingService } from "./GeocodingService";
+import { OSM_Address } from "./OSMGeocodingService";
 
 interface TripOverviewDataDTO extends TripOverviewData
 {
@@ -61,25 +62,40 @@ export class TripsMetaDataCacheService
     private cache: NumberDictionary<TripCacheData>;
 
     //Private methods
+    private AddressToString(address: OSM_Address)
+    {
+        if(address.city !== undefined)
+            return [address.city, address.country].join(", ");
+        if(address.state !== undefined)
+            return [address.state, address.country].join(", ");
+        return address.country;
+    }
+
+    private BuildCommonAddress(a: OSM_Address, b: OSM_Address): OSM_Address
+    {
+        if(a.state === b.state)
+        {
+            return {
+                state: a.state,
+                country: a.country,
+                country_code: a.country_code
+            };
+        }
+        return {
+            country: a.country,
+            country_code: a.country_code
+        };
+    }
+
     private async CacheTripData(tripId: number)
     {
         const trip = await this.tripsController.QueryTrip(tripId);
         const locations = await trip.stops.Values().Map(x => this.geocodingService.ResolveLocation(x.locationId)).PromiseAll();
 
-        if(locations.length === 1)
-        {
-            this.cache[tripId] = {
-                title: locations[0].displayName
-            };
-        }
-        else
-        {
-            const countries = await locations.Values().Map(x => this.geocodingService.ResolveCountry(x.twoLetterCountryCode)).PromiseAll();
-            const groupedAndOrderedCountries = countries.Values().Distinct(x => x.name).OrderBy(x => x.name);
-            
-            this.cache[tripId] = {
-                title: groupedAndOrderedCountries.Map(x => x.name).Join(", ")
-            };
-        }
+        const groupedByCountry = locations.Values().GroupBy(x => x.address.country).Map(x => x.value);
+        const groups = groupedByCountry.Map(x => this.AddressToString(x.Values().Map(y => y.address).Accumulate(this.BuildCommonAddress.bind(this))));
+        this.cache[tripId] = {
+            title: groups.Join(" & "),
+        };
     }
 }

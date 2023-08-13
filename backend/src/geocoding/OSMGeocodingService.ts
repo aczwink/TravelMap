@@ -18,7 +18,7 @@
 
 import { Injectable, HTTP, Lock } from "acts-util-node";
 
-interface OSM_Address
+export interface OSM_Address
 {
     //ordered from smallest to largest
     hamlet?: string;
@@ -28,6 +28,9 @@ interface OSM_Address
     county?: string;
     state?: string;
     country: string;
+    /**
+     * Lowercase
+     */
     country_code: string;
 }
 
@@ -58,10 +61,24 @@ export class OSMGeocodingService
         return this.CallOSM("q", name);
     }
 
-    public async ResolveLocation(osm_type: "relation", osm_id: number)
+    public async ResolveLocation(osm_type: "node" | "relation" | "way", osm_id: number)
     {
         await this.RateLimit();
 
+        let prefix;
+        switch(osm_type)
+        {
+            case "node":
+                prefix = "N";
+                break;
+            case "relation":
+                prefix = "R";
+                break;
+            case "way":
+                prefix = "W";
+                break;
+        }
+        
         const apiService = new HTTP.APIServiceBase("nominatim.openstreetmap.org", 443, "https");
         const response = await apiService.SendRequest({
             formatRules: [],
@@ -72,7 +89,7 @@ export class OSMGeocodingService
             query: {
                 "accept-language": "en",
                 format: "jsonv2",
-                "osm_ids": "R" + osm_id
+                "osm_ids": prefix + osm_id
             }
         }, {
             Host: "nominatim.openstreetmap.org",

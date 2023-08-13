@@ -43,7 +43,7 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
     private async ComputeCountryDistribution(locations: Location[])
     {
         const countries = await locations.Values().Map(async location => {
-            const response = await this.apiService.countries._any_.get(location.twoLetterCountryCode);
+            const response = await this.apiService.countries._any_.get(location.address.country_code);
             return response.data;
         }).PromiseAll();
         const distribution = countries.Values().GroupBy(x => x.name).Map(kv => {
@@ -66,9 +66,11 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
 
     private GenerateScaledColor(weight: number)
     {
-        const r = (0x0f * weight) + (1-weight) * 0xdd;
-        const g = 0xa0 * weight + (1-weight) * 0xdd;
-        const b = 0xfa * weight + (1-weight) * 0xdd;
+        const leastColor = [0x30, 0x65, 0x96];
+        const fullColor = [0x0f, 0xa0, 0xfa];
+
+        const base = this.MixColors(leastColor, [0xdd, 0xdd, 0xdd], 0.5);
+        const [r, g, b] = this.MixColors(fullColor, base, weight);
 
         const ri = Math.round(r);
         const gi = Math.round(g);
@@ -76,6 +78,15 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
 
         const components = [ri, gi, bi].join(", ");
         return "rgb(" + components + ")";
+    }
+
+    private MixColors(col1: number[], col2: number[], weight: number)
+    {
+        const r = (col1[0] * weight) + (1-weight) * col2[0];
+        const g = col1[1] * weight + (1-weight) * col2[1];
+        const b = col1[2] * weight + (1-weight) * col2[2];
+
+        return [r, g, b];
     }
 
     private async QueryLocations()
@@ -114,8 +125,8 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
         fills.defaultFill = '#dddddd';
         
         const data: any = {};
-        locations.forEach(x => data[cc2tocc3(x.twoLetterCountryCode)] = {
-            fillKey: "fill" + fillLookup[x.twoLetterCountryCode]
+        locations.forEach(x => data[cc2tocc3(x.address.country_code)] = {
+            fillKey: "fill" + fillLookup[x.address.country_code]
         });
 
         const lat = 20;

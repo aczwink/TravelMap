@@ -17,7 +17,7 @@
  * */
 
 import { Injectable, Lock } from "acts-util-node";
-import { OSMGeocodingService, OSM_Location } from "./OSMGeocodingService";
+import { OSMGeocodingService, OSM_Address, OSM_Location } from "./OSMGeocodingService";
 import { Dictionary } from "acts-util-core";
 import { Country, RestCountriesService } from "./RestCountriesService";
 
@@ -29,7 +29,7 @@ interface Location
     longitude: string;
     type: "city" | "country" | "region" | "village" | "unknown";
     internalType: string;
-    twoLetterCountryCode: string;
+    address: OSM_Address;
 }
 
 @Injectable
@@ -49,10 +49,10 @@ export class GeocodingService
         if(this.countryCache === undefined)
         {
             const countries = await this.restCountriesService.FetchCountries();
-            this.countryCache = countries.Values().ToDictionary(x => x.cca2.toLowerCase(), x => x);
+            this.countryCache = countries.Values().ToDictionary(x => x.cca2, x => x);
         }
         releaser.Release();
-        return this.countryCache[twoLetterCountryCode.toLowerCase()]!;
+        return this.countryCache[twoLetterCountryCode.toUpperCase()]!;
     }
 
     public async ResolveLocation(locationId: string)
@@ -99,7 +99,7 @@ export class GeocodingService
             longitude: input.lon,
             type: type,
             internalType: input.category + " - " + input.type,
-            twoLetterCountryCode: input.address.country_code
+            address: input.address,
         };
     }
 
