@@ -40,6 +40,7 @@ export class GeocodingService
         this.countryCacheLock = new Lock;
         this.locationSearchCache = {};
         this.lookupLocationCache = {};
+        this.lookupCacheLock = new Lock;
     }
 
     //Public methods
@@ -57,14 +58,34 @@ export class GeocodingService
 
     public async ResolveLocation(locationId: string)
     {
+        const releaser = await this.lookupCacheLock.Lock();
         if(!(locationId in this.lookupLocationCache))
         {
             const parts = locationId.split(":");
             const parts2 = parts[1].split("/");
-            const result = await this.osmGeocodingService.ResolveLocation(parts2[0] as any, parseInt(parts2[1]));
-            this.lookupLocationCache[locationId] = this.MapOSM_Location(result)!;
+            const osm_type = parts2[0] as any;
+            const osm_id = parseInt(parts2[1]);
+            const result = await this.osmGeocodingService.ResolveLocation(osm_type, osm_id);
+            if(result === undefined)
+            {
+                console.log(locationId, "GONE!");
+                this.lookupLocationCache[locationId] = {
+                    address: {
+                        country: "UNKNOWN, OSM LOCATION GONE!",
+                        country_code: "UNKNOWN, OSM LOCATION GONE!",
+                    },
+                    displayName: "UNKNOWN, OSM LOCATION GONE! Check " + locationId + " i.e. https://www.openstreetmap.org/" + osm_type + "/" + osm_id + " and please update location in trip",
+                    id: osm_id.toString(),
+                    internalType: "UNKNOWN, OSM LOCATION GONE!",
+                    latitude: "UNKNOWN, OSM LOCATION GONE!",
+                    longitude: "UNKNOWN, OSM LOCATION GONE!",
+                    type: "country"
+                };
+            }
+            else
+                this.lookupLocationCache[locationId] = this.MapOSM_Location(result)!;
         }
-        
+        releaser.Release();
         return this.lookupLocationCache[locationId]!;
     }
 
@@ -84,6 +105,7 @@ export class GeocodingService
     private countryCacheLock: Lock;
     private locationSearchCache: Dictionary<Location[]>;
     private lookupLocationCache: Dictionary<Location>;
+    private lookupCacheLock: Lock;
 
     //Private methods
     private MapOSM_Location(input: OSM_Location): Location | null
