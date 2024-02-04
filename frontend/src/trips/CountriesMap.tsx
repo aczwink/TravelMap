@@ -1,6 +1,6 @@
 /**
  * TravelMap
- * Copyright (C) 2023 Amir Czwink (amir130@hotmail.de)
+ * Copyright (C) 2023-2024 Amir Czwink (amir130@hotmail.de)
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,6 +24,25 @@ interface CountryDistributionEntry
     twoLetterCountryCode: string;
     count: number;
     weight: number;
+}
+
+function deg2rad(deg: number)
+{
+    return deg * (Math.PI / 180);
+}
+
+function ComputeDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number)
+{
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2-lat1);
+    const dLon = deg2rad(lon2-lon1); 
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const d = R * c; // Distance in km
+    return d;
 }
 
 @Injectable
@@ -129,10 +148,19 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
             fillKey: "fill" + fillLookup[x.address.country_code]
         });
 
-        const lat = 20;
-        const long = 50;
+        const centerLat = locations.Values().Map(x => parseFloat(x.latitude)).Sum() / locations.length;
+        const centerLong = locations.Values().Map(x => parseFloat(x.longitude)).Sum() / locations.length;
+        const distances = locations.Values().Map(x => ComputeDistanceFromLatLonInKm(centerLat, centerLong, parseFloat(x.latitude), parseFloat(x.longitude)));
+        const distance = Math.max(...distances.ToArray());
 
-        new Datamap({
+        const minZoom = 280;
+        const maxZoom = 500;
+        const zoom = 1 - (distance / 6371);
+        const zoomLevel = minZoom + zoom * (maxZoom - minZoom);
+
+        console.log(distance, zoom, zoomLevel);
+
+        const map = new Datamap({
             element: mountPoint,
             data,
             fills,
@@ -142,14 +170,21 @@ export class CountriesMap extends Component<{ locationIds: string[]; }>
                 highlightOnHover: false,
                 popupOnHover: false
             },
+            //responsive: true,
             setProjection: function (element: any) {
                 var projection = d3.geo.mercator()
-                    .center([lat, long])
-                    .scale(500);
+                    .center([centerLong, centerLat])
+                    .scale(element.offsetWidth)
+                    .scale(zoomLevel)
+                    .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+
                 var path = d3.geo.path().projection(projection);
                 return { path: path, projection: projection };
             }
         });
+        /*window.addEventListener('resize', function() {
+            map.resize();
+        });*/
     }
 
     //Event handlers
