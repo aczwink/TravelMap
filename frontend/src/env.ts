@@ -15,20 +15,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
-import ENV from "./env";
-import { APIServiceBase, HTTPService, Injectable } from "acfrontend";
-import { API } from "../dist/api";
 
-@Injectable
-export class APIService extends API
+export default
 {
-    constructor(httpService: HTTPService)
-    {
-        super( req => this.base.SendRequest(req) );
-
-        this.base = new APIServiceBase(httpService, ENV.backend.domainName, ENV.backend.port, ENV.backend.protocol);
+    backend: {
+        domainName: process.env.TRAVELMAP_BACKEND_HOSTNAME!,
+        port: parseInt(process.env.TRAVELMAP_BACKEND_PORT!),
+        protocol: "http" as "http"
     }
-
-    //Private variables
-    private base: APIServiceBase;
-}
+};

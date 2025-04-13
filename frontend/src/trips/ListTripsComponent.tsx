@@ -1,6 +1,6 @@
 /**
  * TravelMap
- * Copyright (C) 2023 Amir Czwink (amir130@hotmail.de)
+ * Copyright (C) 2023-2025 Amir Czwink (amir130@hotmail.de)
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -48,7 +48,7 @@ export class ListTripsComponent extends Component
                     {this.trips.map(this.RenderTrip.bind(this))}
                 </tbody>
             </table>
-            <RouterButton className="btn btn-primary" route="/trips/add"><BootstrapIcon>plus</BootstrapIcon></RouterButton>
+            <RouterButton color="primary" className="btn btn-primary" route="/trips/add"><BootstrapIcon>plus</BootstrapIcon></RouterButton>
         </fragment>;
     }
 
